@@ -1,0 +1,8 @@
+{
+  "customers": 1200,
+  "products": 100,
+  "orders": 6500,
+  "order_items": 16117,
+  "payments": 6642,
+  "returns": 552
+}

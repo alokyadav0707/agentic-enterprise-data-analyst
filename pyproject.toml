@@ -1,0 +1,12 @@
+[project]
+name = "agentic-enterprise-data-analyst-okf-sql"
+version = "1.0.0"
+description = "Semantic-layer-grounded agentic NL-to-SQL demo"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100

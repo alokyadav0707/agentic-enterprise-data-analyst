@@ -1,0 +1,302 @@
+[
+  {
+    "id": "Q01",
+    "question": "What are total customers?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT COUNT(*) AS customer_count FROM customers"
+  },
+  {
+    "id": "Q02",
+    "question": "How many products are there?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT COUNT(*) AS product_count FROM products"
+  },
+  {
+    "id": "Q03",
+    "question": "How many orders are cancelled?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT COUNT(*) AS cancelled_orders FROM orders WHERE status='cancelled'"
+  },
+  {
+    "id": "Q04",
+    "question": "How many non-cancelled orders are there?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT COUNT(*) AS order_count FROM orders WHERE status<>'cancelled'"
+  },
+  {
+    "id": "Q05",
+    "question": "How many customers are in each region?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT region, COUNT(*) AS customer_count FROM customers GROUP BY region ORDER BY region"
+  },
+  {
+    "id": "Q06",
+    "question": "How many customers are in each segment?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT segment, COUNT(*) AS customer_count FROM customers GROUP BY segment ORDER BY segment"
+  },
+  {
+    "id": "Q07",
+    "question": "Show product count by category.",
+    "difficulty": "simple",
+    "expected_sql": "SELECT category, COUNT(*) AS product_count FROM products GROUP BY category ORDER BY category"
+  },
+  {
+    "id": "Q08",
+    "question": "Show order count by status.",
+    "difficulty": "simple",
+    "expected_sql": "SELECT status, COUNT(*) AS order_count FROM orders GROUP BY status ORDER BY status"
+  },
+  {
+    "id": "Q09",
+    "question": "Show order count by sales channel.",
+    "difficulty": "simple",
+    "expected_sql": "SELECT channel, COUNT(*) AS order_count FROM orders GROUP BY channel ORDER BY channel"
+  },
+  {
+    "id": "Q10",
+    "question": "What payment methods are used?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT payment_method, COUNT(*) AS payment_count FROM payments GROUP BY payment_method ORDER BY payment_method"
+  },
+  {
+    "id": "Q11",
+    "question": "How many returns are recorded?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT COUNT(*) AS return_count FROM returns"
+  },
+  {
+    "id": "Q12",
+    "question": "What is the total number of units sold?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT SUM(oi.quantity) AS units_sold FROM order_items oi JOIN orders o ON o.order_id=oi.order_id WHERE o.status<>'cancelled'"
+  },
+  {
+    "id": "Q13",
+    "question": "What is the average item discount?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT ROUND(AVG(oi.discount),4) AS average_discount_rate FROM order_items oi JOIN orders o ON o.order_id=oi.order_id WHERE o.status<>'cancelled'"
+  },
+  {
+    "id": "Q14",
+    "question": "How many customers signed up in 2025?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT COUNT(*) AS customer_count FROM customers WHERE signup_date >= '2025-01-01' AND signup_date < '2026-01-01'"
+  },
+  {
+    "id": "Q15",
+    "question": "How many orders were placed in 2024?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT COUNT(*) AS order_count FROM orders WHERE order_date >= '2024-01-01' AND order_date < '2025-01-01'"
+  },
+  {
+    "id": "Q16",
+    "question": "What is the average product list price?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT ROUND(AVG(list_price),2) AS average_list_price FROM products"
+  },
+  {
+    "id": "Q17",
+    "question": "What is the highest product list price?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT MAX(list_price) AS max_list_price FROM products"
+  },
+  {
+    "id": "Q18",
+    "question": "What is the lowest product unit cost?",
+    "difficulty": "simple",
+    "expected_sql": "SELECT MIN(unit_cost) AS min_unit_cost FROM products"
+  },
+  {
+    "id": "Q19",
+    "question": "What are net sales?",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT ROUND(SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)),2) AS net_sales FROM orders o JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled'"
+  },
+  {
+    "id": "Q20",
+    "question": "Show net sales by month.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT strftime('%Y-%m',o.order_date) AS month, ROUND(SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)),2) AS net_sales FROM orders o JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY month ORDER BY month"
+  },
+  {
+    "id": "Q21",
+    "question": "Show top 10 products by net sales.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT p.product_name, ROUND(SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)),2) AS net_sales FROM products p JOIN order_items oi ON oi.product_id=p.product_id JOIN orders o ON o.order_id=oi.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY p.product_id,p.product_name ORDER BY net_sales DESC LIMIT 10"
+  },
+  {
+    "id": "Q22",
+    "question": "What is average order value?",
+    "difficulty": "intermediate",
+    "expected_sql": "WITH s AS (SELECT o.order_id, SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)) sales FROM orders o JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY o.order_id) SELECT ROUND(AVG(sales),2) AS average_order_value FROM s"
+  },
+  {
+    "id": "Q23",
+    "question": "Show gross profit by month.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT strftime('%Y-%m',o.order_date) AS month, ROUND(SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)-oi.quantity*oi.unit_cost),2) AS gross_profit FROM orders o JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY month ORDER BY month"
+  },
+  {
+    "id": "Q24",
+    "question": "Show order count by region.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT c.region, COUNT(DISTINCT o.order_id) AS order_count FROM customers c JOIN orders o ON o.customer_id=c.customer_id GROUP BY c.region ORDER BY c.region"
+  },
+  {
+    "id": "Q25",
+    "question": "Show net sales by product category.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT p.category, ROUND(SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)),2) AS net_sales FROM products p JOIN order_items oi ON oi.product_id=p.product_id JOIN orders o ON o.order_id=oi.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY p.category ORDER BY p.category"
+  },
+  {
+    "id": "Q26",
+    "question": "What percentage of customers placed at least two orders?",
+    "difficulty": "intermediate",
+    "expected_sql": "WITH c AS (SELECT customer_id,COUNT(*) n FROM orders WHERE status<>'cancelled' GROUP BY customer_id) SELECT ROUND(100.0*SUM(CASE WHEN n>=2 THEN 1 ELSE 0 END)/COUNT(*),2) AS repeat_customer_rate_pct FROM c"
+  },
+  {
+    "id": "Q27",
+    "question": "Show paid payment collection by method.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT payment_method, ROUND(SUM(amount),2) AS payment_collection FROM payments WHERE payment_status='paid' GROUP BY payment_method ORDER BY payment_method"
+  },
+  {
+    "id": "Q28",
+    "question": "Show cancellation rate by channel.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT channel, ROUND(100.0*SUM(CASE WHEN status='cancelled' THEN 1 ELSE 0 END)/COUNT(*),2) AS cancellation_rate_pct FROM orders GROUP BY channel ORDER BY channel"
+  },
+  {
+    "id": "Q29",
+    "question": "Show return count by reason.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT reason, COUNT(*) AS return_count FROM returns GROUP BY reason ORDER BY reason"
+  },
+  {
+    "id": "Q30",
+    "question": "Show units sold by category.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT p.category, SUM(oi.quantity) AS units_sold FROM products p JOIN order_items oi ON oi.product_id=p.product_id JOIN orders o ON o.order_id=oi.order_id WHERE o.status<>'cancelled' GROUP BY p.category ORDER BY p.category"
+  },
+  {
+    "id": "Q31",
+    "question": "Show net sales by customer segment.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT c.segment, ROUND(SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)),2) AS net_sales FROM customers c JOIN orders o ON o.customer_id=c.customer_id JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY c.segment ORDER BY c.segment"
+  },
+  {
+    "id": "Q32",
+    "question": "Show average order value by region.",
+    "difficulty": "intermediate",
+    "expected_sql": "WITH s AS (SELECT o.order_id,o.customer_id,SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)) sales FROM orders o JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY o.order_id) SELECT c.region,ROUND(AVG(s.sales),2) AS average_order_value FROM s JOIN customers c ON c.customer_id=s.customer_id GROUP BY c.region ORDER BY c.region"
+  },
+  {
+    "id": "Q33",
+    "question": "Show top 10 customers by historical net sales.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT c.customer_id,c.customer_name,ROUND(SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)),2) AS customer_lifetime_value FROM customers c JOIN orders o ON o.customer_id=c.customer_id JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY c.customer_id,c.customer_name ORDER BY customer_lifetime_value DESC LIMIT 10"
+  },
+  {
+    "id": "Q34",
+    "question": "Show net sales by sales channel.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT o.channel,ROUND(SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)),2) AS net_sales FROM orders o JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY o.channel ORDER BY o.channel"
+  },
+  {
+    "id": "Q35",
+    "question": "Show average discount by product category.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT p.category,ROUND(AVG(oi.discount),4) AS average_discount_rate FROM products p JOIN order_items oi ON oi.product_id=p.product_id JOIN orders o ON o.order_id=oi.order_id WHERE o.status<>'cancelled' GROUP BY p.category ORDER BY p.category"
+  },
+  {
+    "id": "Q36",
+    "question": "Show return refunds by month.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT strftime('%Y-%m',return_date) AS month,ROUND(SUM(refund_amount),2) AS refund_amount FROM returns GROUP BY month ORDER BY month"
+  },
+  {
+    "id": "Q37",
+    "question": "Show customer counts by signup year.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT substr(signup_date,1,4) AS signup_year,COUNT(*) AS customer_count FROM customers GROUP BY signup_year ORDER BY signup_year"
+  },
+  {
+    "id": "Q38",
+    "question": "Show order counts by month.",
+    "difficulty": "intermediate",
+    "expected_sql": "SELECT strftime('%Y-%m',order_date) AS month,COUNT(*) AS order_count FROM orders GROUP BY month ORDER BY month"
+  },
+  {
+    "id": "Q39",
+    "question": "Show average order value by channel.",
+    "difficulty": "intermediate",
+    "expected_sql": "WITH s AS (SELECT o.order_id,o.channel,SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)) sales FROM orders o JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY o.order_id) SELECT channel,ROUND(AVG(sales),2) AS average_order_value FROM s GROUP BY channel ORDER BY channel"
+  },
+  {
+    "id": "Q40",
+    "question": "Compare net sales and gross profit by month.",
+    "difficulty": "complex",
+    "expected_sql": "SELECT strftime('%Y-%m',o.order_date) AS month,ROUND(SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)),2) AS net_sales,ROUND(SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)-oi.quantity*oi.unit_cost),2) AS gross_profit FROM orders o JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY month ORDER BY month"
+  },
+  {
+    "id": "Q41",
+    "question": "Which products have the highest return refunds?",
+    "difficulty": "complex",
+    "expected_sql": "SELECT p.product_name,ROUND(SUM(r.refund_amount),2) AS refund_amount FROM returns r JOIN order_items oi ON oi.order_item_id=r.order_item_id JOIN products p ON p.product_id=oi.product_id GROUP BY p.product_id,p.product_name ORDER BY refund_amount DESC LIMIT 10"
+  },
+  {
+    "id": "Q42",
+    "question": "Show net sales and order count by region and segment.",
+    "difficulty": "complex",
+    "expected_sql": "SELECT c.region,c.segment,ROUND(SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)),2) AS net_sales,COUNT(DISTINCT o.order_id) AS order_count FROM customers c JOIN orders o ON o.customer_id=c.customer_id JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY c.region,c.segment ORDER BY c.region,c.segment"
+  },
+  {
+    "id": "Q43",
+    "question": "Show monthly revenue growth using previous month.",
+    "difficulty": "complex",
+    "expected_sql": "WITH m AS (SELECT strftime('%Y-%m',o.order_date) month,SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)) sales FROM orders o JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY month), x AS (SELECT month,sales,LAG(sales) OVER(ORDER BY month) prior_sales FROM m) SELECT month,ROUND(100.0*(sales-prior_sales)/NULLIF(prior_sales,0),2) AS revenue_growth_pct FROM x ORDER BY month"
+  },
+  {
+    "id": "Q44",
+    "question": "Find customers with at least five non-cancelled orders.",
+    "difficulty": "complex",
+    "expected_sql": "SELECT c.customer_id,c.customer_name,COUNT(DISTINCT o.order_id) AS order_count FROM customers c JOIN orders o ON o.customer_id=c.customer_id WHERE o.status<>'cancelled' GROUP BY c.customer_id,c.customer_name HAVING COUNT(DISTINCT o.order_id)>=5 ORDER BY order_count DESC"
+  },
+  {
+    "id": "Q45",
+    "question": "Show net sales by region for 2025.",
+    "difficulty": "complex",
+    "expected_sql": "SELECT c.region,ROUND(SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)),2) AS net_sales FROM customers c JOIN orders o ON o.customer_id=c.customer_id JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' AND o.order_date>='2025-01-01' AND o.order_date<'2026-01-01' GROUP BY c.region ORDER BY c.region"
+  },
+  {
+    "id": "Q46",
+    "question": "Show product category gross profit margin percentage.",
+    "difficulty": "complex",
+    "expected_sql": "SELECT p.category,ROUND(100.0*SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)-oi.quantity*oi.unit_cost)/NULLIF(SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)),0),2) AS profit_margin_pct FROM products p JOIN order_items oi ON oi.product_id=p.product_id JOIN orders o ON o.order_id=oi.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY p.category ORDER BY p.category"
+  },
+  {
+    "id": "Q47",
+    "question": "Show payment collection by month for paid payments.",
+    "difficulty": "complex",
+    "expected_sql": "SELECT strftime('%Y-%m',payment_date) AS month,ROUND(SUM(amount),2) AS payment_collection FROM payments WHERE payment_status='paid' GROUP BY month ORDER BY month"
+  },
+  {
+    "id": "Q48",
+    "question": "Find products with more than 100 units sold.",
+    "difficulty": "complex",
+    "expected_sql": "SELECT p.product_name,SUM(oi.quantity) AS units_sold FROM products p JOIN order_items oi ON oi.product_id=p.product_id JOIN orders o ON o.order_id=oi.order_id WHERE o.status<>'cancelled' GROUP BY p.product_id,p.product_name HAVING SUM(oi.quantity)>100 ORDER BY units_sold DESC"
+  },
+  {
+    "id": "Q49",
+    "question": "Compare sales by customer segment and channel.",
+    "difficulty": "complex",
+    "expected_sql": "SELECT c.segment,o.channel,ROUND(SUM(oi.quantity*oi.unit_price*(1-oi.discount)-COALESCE(r.refund_amount,0)),2) AS net_sales FROM customers c JOIN orders o ON o.customer_id=c.customer_id JOIN order_items oi ON oi.order_id=o.order_id LEFT JOIN returns r ON r.order_item_id=oi.order_item_id WHERE o.status<>'cancelled' GROUP BY c.segment,o.channel ORDER BY c.segment,o.channel"
+  },
+  {
+    "id": "Q50",
+    "question": "Show repeat customer rate by region.",
+    "difficulty": "complex",
+    "expected_sql": "WITH c AS (SELECT customer_id,COUNT(*) n FROM orders WHERE status<>'cancelled' GROUP BY customer_id) SELECT cu.region,ROUND(100.0*SUM(CASE WHEN c.n>=2 THEN 1 ELSE 0 END)/COUNT(*),2) AS repeat_customer_rate_pct FROM c JOIN customers cu ON cu.customer_id=c.customer_id GROUP BY cu.region ORDER BY cu.region"
+  }
+]

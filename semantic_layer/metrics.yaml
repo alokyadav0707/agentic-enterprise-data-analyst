@@ -1,0 +1,162 @@
+version: "1.0"
+catalog_name: "Retail OKF-inspired semantic layer"
+metrics:
+  - name: net_sales
+    description: Sales after discounts and recorded refunds
+    synonyms: [revenue, net revenue, sales]
+    expression: "SUM(quantity * unit_price * (1 - discount) - item_refund_amount)"
+    grain: order item, aggregatable by order, customer, product, region, month
+    tables: [orders, order_items, returns, customers, products]
+    joins: ["orders.order_id = order_items.order_id", "returns.order_item_id = order_items.order_item_id"]
+    filters: ["orders.status <> 'cancelled'"]
+    business_rules: "Aggregate at item grain; subtract recorded refund per item; do not join raw payments before aggregation."
+  - name: gross_sales
+    description: Item sales before discounts and returns
+    synonyms: [gross revenue, sales before discount]
+    expression: "SUM(quantity * unit_price)"
+    grain: order item
+    tables: [orders, order_items]
+    joins: ["orders.order_id = order_items.order_id"]
+    filters: ["orders.status <> 'cancelled'"]
+    business_rules: "Excludes cancelled orders; before discounts and refunds."
+  - name: gross_profit
+    description: Net sales less cost of goods sold
+    synonyms: [profit, gross margin dollars]
+    expression: "SUM(quantity * unit_price * (1 - discount) - item_refund_amount - quantity * unit_cost)"
+    grain: order item
+    tables: [orders, order_items, returns]
+    joins: ["orders.order_id = order_items.order_id", "returns.order_item_id = order_items.order_item_id"]
+    filters: ["orders.status <> 'cancelled'"]
+    business_rules: "Simplified gross profit; assumes returned units reverse sales but cost reversal is not modeled."
+  - name: profit_margin
+    description: Gross profit as a percentage of net sales
+    synonyms: [margin, gross margin percent]
+    expression: "100 * gross_profit / NULLIF(net_sales, 0)"
+    grain: selected reporting dimensions
+    tables: [orders, order_items, returns]
+    joins: ["item-grain joins only"]
+    filters: ["orders.status <> 'cancelled'"]
+    business_rules: "Return NULL when net sales is zero."
+  - name: average_order_value
+    description: Average net sales per non-cancelled order
+    synonyms: [aov, average basket value]
+    expression: "AVG(order_level_net_sales)"
+    grain: order
+    tables: [orders, order_items, returns]
+    joins: ["Aggregate item rows to order_id before averaging."]
+    filters: ["orders.status <> 'cancelled'"]
+    business_rules: "Compute one net sales value per order before averaging."
+  - name: order_count
+    description: Number of distinct non-cancelled orders
+    synonyms: [orders, number of orders]
+    expression: "COUNT(DISTINCT order_id)"
+    grain: selected reporting dimensions
+    tables: [orders]
+    joins: ["orders.customer_id = customers.customer_id when needed"]
+    filters: ["orders.status <> 'cancelled'"]
+    business_rules: "Use distinct order_id after one-to-many joins."
+  - name: customer_count
+    description: Number of customers
+    synonyms: [customers, customer volume]
+    expression: "COUNT(DISTINCT customer_id)"
+    grain: selected reporting dimensions
+    tables: [customers, orders]
+    joins: ["customers.customer_id = orders.customer_id when needed"]
+    filters: []
+    business_rules: "Use distinct customer_id when joining to orders."
+  - name: repeat_customer_rate
+    description: Percentage of active customers with two or more non-cancelled orders
+    synonyms: [repeat rate, returning customers, retention]
+    expression: "100 * customers_with_2plus_orders / customers_with_1plus_orders"
+    grain: reporting period
+    tables: [customers, orders]
+    joins: ["Aggregate orders by customer before calculating the rate."]
+    filters: ["orders.status <> 'cancelled'"]
+    business_rules: "Denominator is customers with at least one non-cancelled order in scope."
+  - name: customer_lifetime_value
+    description: Historical cumulative net sales per customer
+    synonyms: [clv, lifetime value, customer value]
+    expression: "SUM(customer item net sales)"
+    grain: customer
+    tables: [customers, orders, order_items, returns]
+    joins: ["Aggregate at item grain then group by customer."]
+    filters: ["orders.status <> 'cancelled'"]
+    business_rules: "Historical descriptive CLV, not a forecast."
+  - name: revenue_growth
+    description: Percentage change in net sales versus the previous comparable period
+    synonyms: [sales growth, month over month growth, growth rate]
+    expression: "100 * (current_period_net_sales - prior_period_net_sales) / NULLIF(prior_period_net_sales, 0)"
+    grain: month or quarter
+    tables: [orders, order_items, returns]
+    joins: ["Build period-level aggregates before comparing adjacent periods."]
+    filters: ["orders.status <> 'cancelled'"]
+    business_rules: "Requires a defined time grain and at least two periods."
+  - name: units_sold
+    description: Quantity sold before returns
+    synonyms: [quantity, volume sold, units]
+    expression: "SUM(order_items.quantity)"
+    grain: order item
+    tables: [orders, order_items]
+    joins: ["orders.order_id = order_items.order_id"]
+    filters: ["orders.status <> 'cancelled'"]
+    business_rules: "Returns are tracked separately; this metric is gross units."
+  - name: return_rate
+    description: Returned units as a percentage of gross units sold
+    synonyms: [returns percentage, product return rate]
+    expression: "100 * SUM(returns.quantity) / NULLIF(SUM(order_items.quantity), 0)"
+    grain: item/product/category
+    tables: [orders, order_items, returns, products]
+    joins: ["Aggregate return quantity by order_item_id to avoid duplicated return rows."]
+    filters: ["orders.status <> 'cancelled'"]
+    business_rules: "Unit-based return rate, not order-based return rate."
+  - name: discount_amount
+    description: Monetary value of item discounts
+    synonyms: [discounts, promotional discount]
+    expression: "SUM(quantity * unit_price * discount)"
+    grain: order item
+    tables: [orders, order_items]
+    joins: ["orders.order_id = order_items.order_id"]
+    filters: ["orders.status <> 'cancelled'"]
+    business_rules: "Discount is stored as a fraction between 0 and 1."
+  - name: payment_collection
+    description: Amount marked paid in the payments table
+    synonyms: [cash collected, payments received]
+    expression: "SUM(amount) WHERE payment_status = 'paid'"
+    grain: payment
+    tables: [payments, orders]
+    joins: ["Aggregate payments by order before joining to item sales."]
+    filters: ["payment_status = 'paid'"]
+    business_rules: "Payment amount is not interchangeable with net sales; split payments may exist."
+  - name: cancellation_rate
+    description: Percentage of orders cancelled
+    synonyms: [cancelled orders, cancellation percentage]
+    expression: "100 * cancelled_orders / total_orders"
+    grain: reporting period
+    tables: [orders]
+    joins: []
+    filters: []
+    business_rules: "Order-level metric; do not count order items."
+  - name: average_discount_rate
+    description: Average discount fraction across order items
+    synonyms: [mean discount, discount rate]
+    expression: "AVG(discount)"
+    grain: order item
+    tables: [orders, order_items]
+    joins: ["orders.order_id = order_items.order_id"]
+    filters: ["orders.status <> 'cancelled'"]
+    business_rules: "This is an unweighted average item discount rate."
+  - name: sales_per_customer
+    description: Average historical net sales per purchasing customer
+    synonyms: [revenue per customer, spend per customer]
+    expression: "SUM(net_sales) / COUNT(DISTINCT customer_id)"
+    grain: customer cohort or selected dimensions
+    tables: [customers, orders, order_items, returns]
+    joins: ["Use item-grain net sales and distinct customer counts."]
+    filters: ["orders.status <> 'cancelled'"]
+    business_rules: "Historical average, not predicted customer value."
+business_rules:
+  - "Use non-cancelled orders for sales metrics."
+  - "Aggregate one-to-many tables before joining to another one-to-many table."
+  - "Returns are keyed to order_item_id; aggregate refunds by item before joining."
+  - "Never add raw payments and order_items together at order grain without pre-aggregation."
+  - "All data is synthetic and intended for demonstration only."
